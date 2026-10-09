@@ -1,5 +1,14 @@
 import pytest
-from accounts import (AccountStatus, BankAccount, InvalidOperationError, InsufficientFundsError, AccountFrozenError, AccountClosedError)
+
+from models import (
+    AccountClosedError,
+    AccountFrozenError,
+    AccountStatus,
+    BankAccount,
+    InsufficientFundsError,
+    InvalidOperationError,
+)
+
 
 def test_account_creation():
     account = BankAccount(owner="Ivan Ivanov")
@@ -26,6 +35,7 @@ def test_create_active_and_frozen_accounts():
     print(active_account)
     print(frozen_account)
 
+
 def test_operations_on_frozen_account():
     """Попытки пополнения и снятия с замороженного счёта."""
     account = BankAccount(
@@ -42,6 +52,7 @@ def test_operations_on_frozen_account():
 
     assert account._balance == 500
 
+
 def test_valid_deposit_and_withdraw():
     """Успешное пополнение и снятие средств."""
     account = BankAccount(owner="Ivan Ivanov", balance=1000)
@@ -53,4 +64,3 @@ def test_valid_deposit_and_withdraw():
     assert account._balance == 1200
 
     print(account)
-
