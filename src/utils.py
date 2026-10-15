@@ -1,8 +1,14 @@
 """Вспомогательные функции для валидации и форматирования данных."""
 
 import math
+from enum import Enum
 
 ALLOWED_CURRENCIES = {"RUB", "USD", "EUR", "KZT", "CNY"}
+
+class AccountStatus(Enum):
+    ACTIVE = "Account is active"
+    FROZEN = "Account is frozen"
+    CLOSED = "Account is closed"
 
 
 def is_number(value):
