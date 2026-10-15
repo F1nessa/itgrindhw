@@ -1,11 +1,15 @@
 """Модели данных банковских счетов."""
 
 from abc import ABC, abstractmethod
-from enum import Enum
-from typing import ClassVar
 from uuid import uuid4
 
-from utils import is_finite, is_number, is_valid_currency, mask_account_id
+from utils import (
+    AccountStatus,
+    is_finite,
+    is_number,
+    is_valid_currency,
+    mask_account_id,
+)
 
 
 class AccountFrozenError(Exception):
@@ -24,10 +28,7 @@ class InsufficientFundsError(Exception):
     """Raised when an account has insufficient funds."""
 
 
-class AccountStatus(Enum):
-    ACTIVE = "Account is active"
-    FROZEN = "Account is frozen"
-    CLOSED = "Account is closed"
+
 
 
 class AbstractAccount(ABC):
@@ -151,11 +152,10 @@ class SavingsAccount(BankAccount):
     # - 📈 месячная ставка доходности
     # - 💰 метод apply_monthly_interest()
     '''
-    def __init__(self, account_id=None, owner=None, balance=0, status=AccountStatus.ACTIVE, currency="RUB", monthly_interest_rate=0.01, min_balance=0):
-        self._validate_balance(min_balance)
+    def __init__(self, account_id=None, owner=None, balance=0, status=AccountStatus.ACTIVE, currency="RUB", monthly_interest_rate=0.01):
         super().__init__(account_id, owner, balance, status, currency)
         self.monthly_interest_rate = monthly_interest_rate # 📈 месячная ставка доходности
-        self.min_balance = min_balance # 🔒 минимальный остаток
+        self.min_balance = 0 
 
     def apply_monthly_interest(self):
         self._ensure_active()
@@ -251,22 +251,31 @@ class InvestmentAccount(BankAccount):
         self._validate_amount(amount)
         if investment_name not in self.ALLOWED_ASSETS:
             raise InvalidOperationError(
-                f"Asset type must be one of {self.ALLOWED_ASSETS}"
+                f"Unsupported asset type: {investment_name}"
             )
         if amount > self._balance:
-            raise InsufficientFundsError("Insufficient funds to invest")
+            raise InsufficientFundsError(
+                "Not enough available money to buy assets"
+            )
         if investment_name in self.investment_portfolio:
             self.investment_portfolio[investment_name] += amount
         else:
             self.investment_portfolio[investment_name] = amount
         self._balance -= amount
 
-    def withdraw(self, investment_name, amount):
+    def withdraw(self, amount, investment_name = None):
         self._ensure_active()
-        if investment_name not in self.investment_portfolio:
-            raise InvalidOperationError("Investment not found")
-        if amount > self.investment_portfolio[investment_name]:
-            raise InvalidOperationError("Insufficient investment amount")
+        if investment_name is None:
+            # Withdraw from the main balance
+            self._validate_amount(amount)
+            if amount > self._balance:
+                raise InvalidOperationError("Insufficient funds")
+            self._balance -= amount
+        else:
+            if investment_name not in self.investment_portfolio:
+                raise InvalidOperationError("Investment not found")
+            if amount > self.investment_portfolio[investment_name]:
+                raise InvalidOperationError("Insufficient investment amount")
         self.investment_portfolio[investment_name] -= amount
         if self.investment_portfolio[investment_name] == 0:
             del self.investment_portfolio[investment_name]
